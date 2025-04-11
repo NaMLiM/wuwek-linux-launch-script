@@ -1,6 +1,6 @@
 # WuWek Linux Launcher Script
 
-A unified Bash script designed to manage and launch WuWek on Linux.
+A unified Bash script designed to launch WuWek on Linux.
 
 ## Features
 
