@@ -1,6 +1,6 @@
 # WuWek Linux Launcher Script
 
-A unified Bash script designed to manage and launch WuWek on Linux, handling patching, separate launcher execution, and game execution with various enhancements including DX11/DX12 selection.
+A unified Bash script designed to manage and launch WuWek on Linux.
 
 ## Features
 
@@ -14,9 +14,6 @@ A unified Bash script designed to manage and launch WuWek on Linux, handling pat
   - Uses VKD3D-Proton overrides for DX12 to Vulkan translation when `--dx12` mode is selected (if enabled, requires manual/auto-install).
   - Automatically installs DXVK and/or VKD3D-Proton from source directories on first run/reset (optional).
 - **Simplified Configuration:** Uses a single `GAME_ROOT_DIR` variable to derive most paths.
-- **Optional Wrappers:** Easily toggle Feral GameMode (`gamemoderun`) and MangoHud via command-line options (`-g`, `-m`) in `game` mode.
-- **Custom Overrides:** Apply custom Wine DLL overrides (`WINEDLLOVERRIDES`).
-- **Specific Argument Handling:** Passes the game path, separator (`--`), and DX mode (`-d3d11` or `-d3d12`) as a single combined first argument to the game launcher (`jadeite.exe`), followed by any user-provided extra arguments.
 
 ## Requirements
 
@@ -60,17 +57,14 @@ Run the script from your terminal.
   # OR explicitly:
   ./wuwek.sh game [options] [additional_game_args...]
   ```
-  _(Passes `"<Game Path> -- -d3d11"` as the first argument to Jadeite, followed by additional args)_
 - **Run Game in DX11 Mode:**
   ```bash
   ./wuwek.sh --dx11 [options] [additional_game_args...]
   ```
-  _(Passes `"<Game Path> -- -d3d11"` as the first argument to Jadeite, followed by additional args)_
 - **Run Game in DX12 Mode:**
   ```bash
   ./wuwek.sh --dx12 [options] [additional_game_args...]
   ```
-  _(Passes `"<Game Path> -- -d3d12"` as the first argument to Jadeite, followed by additional args. Requires VKD3D setup as noted in Requirements)_
 - **Run the Native Launcher:**
   ```bash
   ./wuwek.sh launcher
