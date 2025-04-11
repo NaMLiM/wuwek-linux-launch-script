@@ -5,7 +5,7 @@ A unified Bash script designed to manage and launch WuWek on Linux, handling pat
 ## Features
 
 - **Multiple Modes:**
-  - `game` (Default): Launches the game using a specific launcher (`jadeite.exe` by default) with DXVK/VKD3D-Proton, optional wrappers, custom overrides, and specific argument handling. Uses a dedicated game prefix.
+  - `game` (Default): Launches the game with DXVK/VKD3D-Proton, optional wrappers, custom overrides, and specific argument handling. Uses a dedicated game prefix.
   - `launcher`: Runs the original native game launcher (`launcher.exe` by default) cleanly in its own dedicated prefix, useful for checking for updates.
   - `patch`: Applies a specific binary patch to `launcher_main.dll`.
 - **DirectX Mode Selection:** Choose between DX11 (`--dx11`, default) or DX12 (`--dx12`) launch options for `game` mode. The script constructs the first argument passed to the game launcher accordingly.
