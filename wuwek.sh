@@ -44,7 +44,7 @@ PATCHER_TARGET_DLL="launcher_main.dll"
 
 # --- Runtime Variables ---
 SCRIPT_MODE="game" # Default mode
-USE_MANGO HUD=false
+USE_MANGO_HUD=false
 USE_GAMEMODE=false
 EXTRA_GAME_ARGS_ARRAY=()
 WINE_TO_USE=""
@@ -157,7 +157,7 @@ run_game() {
     install_vkd3d_if_needed "$prefix_resolved" "$vkd3d_source_resolved"
 
     # Validate optional tools
-    local effective_gamemode=$USE_GAMEMODE; local effective_mangohud=$USE_MANGO HUD
+    local effective_gamemode=$USE_GAMEMODE; local effective_mangohud=$USE_MANGO_HUD
     if [[ "$effective_gamemode" == "true" ]] && ! command -v gamemoderun &> /dev/null; then echo "Warning [Game Mode]: GameMode (-g) needs 'gamemoderun'. Disabling." >&2; effective_gamemode=false; fi
     if [[ "$effective_mangohud" == "true" ]] && ! command -v mangohud &> /dev/null; then echo "Warning [Game Mode]: MangoHud (-m) needs 'mangohud'. Disabling." >&2; effective_mangohud=false; fi
 
@@ -212,7 +212,7 @@ elif [[ "$1" == "-h" || "$1" == "--help" ]]; then show_help; fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -m|--mangohud) USE_MANGO HUD=true; shift ;;
+    -m|--mangohud) USE_MANGO_HUD=true; shift ;;
     -g|--gamemode) USE_GAMEMODE=true; shift ;;
     --dx11) SELECTED_DX_MODE="dx11"; shift ;;
     --dx12) SELECTED_DX_MODE="dx12"; shift ;;
