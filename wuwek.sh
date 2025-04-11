@@ -1,8 +1,4 @@
 #!/bin/bash
-# Unified script for WuWek: Patching, Launcher, and Game modes.
-# Uses a single GAME_ROOT_DIR, supports DX11/DX12 selection, VKD3D, wrappers.
-# Passes game path + separator + dx mode as a single argument to jadeite.
-
 # --- HARDCODED CONFIGURATION ---
 # !!! ONLY EDIT GAME_ROOT_DIR UNLESS YOUR FOLDER STRUCTURE IS DIFFERENT !!!
 
@@ -11,13 +7,12 @@ GAME_ROOT_DIR="$HOME/Games/Wuthering Waves" # <<< EDIT THIS PATH >>>
 
 # --- Derived Paths (DO NOT EDIT THESE NORMALLY) ---
 GAME_ROOT_DIR_RESOLVED=$(eval echo "$GAME_ROOT_DIR")
-LAUNCHER_PREFIX="${GAME_ROOT_DIR_RESOLVED}/launcher_prefixes"
+LAUNCHER_PREFIX="${GAME_ROOT_DIR_RESOLVED}/launcher_prefixes" # Currently unused if run_launcher uses GAME_PREFIX
 GAME_PREFIX="${GAME_ROOT_DIR_RESOLVED}/prefixes"
 WINE_CMD="${GAME_ROOT_DIR_RESOLVED}/components/wine/bin/wine" # Set to "" or comment out for system wine
 NATIVE_LAUNCHER_EXE="${GAME_ROOT_DIR_RESOLVED}/launcher.exe"
 JADEITE_LAUNCHER_EXE="${GAME_ROOT_DIR_RESOLVED}/components/jadeite/jadeite.exe"
-# !! IMPORTANT !! Verify this relative path points to the correct game executable
-GAME_EXE_PATH_VAR="${GAME_ROOT_DIR_RESOLVED}/Wuthering Waves Game/Client/Binaries/Win64/Client-Win64-Shipping.exe"
+GAME_EXE_PATH_VAR="${GAME_ROOT_DIR_RESOLVED}/Wuthering Waves Game/Client/Binaries/Win64/Client-Win64-Shipping.exe" # Example Path - VERIFY THIS
 
 # --- DXVK Setup (Game Mode - DX9/10/11) ---
 ENABLE_DXVK=true
@@ -27,7 +22,7 @@ DXVK_FLAG_FILE_NAME=".dxvk_installed_flag"
 
 # --- VKD3D-Proton Setup (Game Mode - DX12) ---
 ENABLE_VKD3D=true
-HARDCODED_VKD3D_SOURCE_DIR="${GAME_ROOT_DIR_RESOLVED}/components/vkd3d-proton"
+HARDCODED_VKD3D_SOURCE_DIR="${GAME_ROOT_DIR_RESOLVED}/components/vkd3d-proton" # <<< EDIT THIS PATH if using ENABLE_VKD3D
 VKD3D_FLAG_FILE_NAME=".vkd3d_installed_flag"
 
 # --- Game Mode Settings ---
@@ -43,7 +38,7 @@ PATCHER_TARGET_DLL="launcher_main.dll"
 # --- END CONFIGURATION ---
 
 # --- Runtime Variables ---
-SCRIPT_MODE="game" # Default mode
+SCRIPT_MODE="game"
 USE_MANGO_HUD=false
 USE_GAMEMODE=false
 EXTRA_GAME_ARGS_ARRAY=()
@@ -60,34 +55,34 @@ show_help() {
   echo
   echo "Modes:"
   echo "  game      (Default) Runs the game via Jadeite launcher. Uses GAME_PREFIX."
-  echo "            Constructs first argument as: \"<Game Path> -- -d3d<11|12>\"" # Updated help
-  echo "  launcher  Runs the original native launcher cleanly. Uses LAUNCHER_PREFIX."
+  echo "            Passes arguments to Jadeite as: <Game Path> -- -d3d<11|12> [extras...]"
+  echo "  launcher  Runs the original native launcher cleanly. Uses GAME_PREFIX."
+  echo "            (Applies specific 'KRSDKExternal.exe=d' override)."
   echo "  patch     Applies the transparency patch to '$PATCHER_TARGET_DLL'."
   echo
   echo "Options (Only apply to 'game' mode):"
-  echo "  --dx11             Select DirectX 11 mode for the combined argument."
-  echo "  --dx12             Select DirectX 12 mode for the combined argument."
+  echo "  --dx11             Select DirectX 11 mode (passes -d3d11 argument)."
+  echo "  --dx12             Select DirectX 12 mode (passes -d3d12 argument)."
   echo "                     (Default DX Mode: $DEFAULT_DX_MODE)"
   echo "  -m, --mangohud         Enable MangoHud overlay."
   echo "  -g, --gamemode         Enable Feral GameMode (gamemoderun)."
   echo "  -h, --help             Show this help message and exit."
   echo
   echo "Arguments (Only apply to 'game' mode):"
-  echo "  [additional_game_args...]  Passed as separate arguments AFTER the automatically" # Updated help
-  echo "                             constructed \"<Game Path> -- -d3d<11|12>\" argument."
+  echo "  [additional_game_args...]  Passed as separate arguments AFTER the automatically"
+  echo "                             added <Game Path>, '--', and '-d3d<11|12>' arguments."
   echo
   echo "Requirements Note:"
-  echo "  - Using '--dx12' with ENABLE_VKD3D=true requires VKD3D-Proton DLLs"
-  echo "    (d3d12.dll, d3d12core.dll) to be installed in GAME_PREFIX (manual or auto-install)."
+  echo "  - Using '--dx12' with ENABLE_VKD3D=true requires VKD3D-Proton DLLs installed."
   echo "  - Using '-m' requires 'mangohud'; '-g' requires 'gamemoderun'."
   echo "  - Using 'patch' mode requires 'bbe'."
   echo
   echo "Current Configuration:"
   echo "  Game Root:        $GAME_ROOT_DIR_RESOLVED"
+  echo "  Wine Prefix (All): $GAME_PREFIX"
   exit 0
 }
 
-# (install_dxvk_if_needed function remains the same)
 install_dxvk_if_needed() {
   local prefix_path="$1"
   local dxvk_source_path="$2"
@@ -122,8 +117,6 @@ install_dxvk_if_needed() {
     return 1
   fi
 }
-
-# (install_vkd3d_if_needed function remains the same)
 install_vkd3d_if_needed() {
   local prefix_path="$1"
   local vkd3d_source_path="$2"
@@ -135,7 +128,7 @@ install_vkd3d_if_needed() {
   fi
   echo "Info [Game Mode]: VKD3D-Proton flag file not found. Attempting VKD3D installation/update..."
   local vkd3d_source_x64="$vkd3d_source_path/x64"
-  local vkd3d_source_x32="$vkd3d_source_path/x32"
+  local vkd3d_source_x32="$vkd3d_source_path/x86"
   if [[ ! -d "$vkd3d_source_path" || ! -d "$vkd3d_source_x64" || ! -d "$vkd3d_source_x32" ]]; then
     echo "Error [Game Mode]: VKD3D Source ('$vkd3d_source_path') or subfolders (x64/x32) not found." >&2
     echo "       Cannot install VKD3D. Please check HARDCODED_VKD3D_SOURCE_DIR." >&2
@@ -160,8 +153,6 @@ install_vkd3d_if_needed() {
     return 1
   fi
 }
-
-# (run_patcher function remains the same)
 run_patcher() {
   echo "--- Running Patcher Mode ---"
   local base_dir_resolved="$PATCHER_BASE_DIR"
@@ -199,11 +190,9 @@ run_patcher() {
   echo "Info [Patcher Mode]: Patch applied successfully."
   return 0
 }
-
-# (run_launcher function remains the same)
 run_launcher() {
   echo "--- Running Launcher Mode ---"
-  local prefix_resolved="$LAUNCHER_PREFIX"
+  local prefix_resolved="$GAME_PREFIX"
   local launcher_exe_resolved="$NATIVE_LAUNCHER_EXE"
   local prefix_parent_dir=$(dirname "$prefix_resolved")
   if [[ ! -d "$prefix_parent_dir" ]]; then
@@ -214,26 +203,28 @@ run_launcher() {
     echo "Error [Launcher Mode]: Native launcher EXE not found: '$launcher_exe_resolved'" >&2
     return 1
   fi
-  echo "Prefix: $prefix_resolved"
-  echo "Wine: $WINE_TO_USE"
-  echo "Launcher: $launcher_exe_resolved"
-  echo "(No extras)"
+  echo "Prefix:     $prefix_resolved (Using Game Prefix)"
+  echo "Wine:       $WINE_TO_USE"
+  echo "Launcher:   $launcher_exe_resolved"
+  echo "(Applies 'KRSDKExternal.exe=d' override; No extra args/DXVK/wrappers)"
   export WINEPREFIX="$prefix_resolved"
-  unset WINEDLLOVERRIDES DXVK_HUD DXVK_ENABLE_NVAPI # Ensure clean environment
+  unset DXVK_HUD DXVK_ENABLE_NVAPI
+  export WINEDLLOVERRIDES="KRSDKExternal.exe=d"
+  echo "Info [Launcher Mode]: Applied WINEDLLOVERRIDES=$WINEDLLOVERRIDES"
   echo "----------------------------"
   echo "--- Running Command ---"
   echo "Command: \"$WINE_TO_USE\" \"$launcher_exe_resolved\""
   echo "----------------------------"
   "$WINE_TO_USE" "$launcher_exe_resolved"
-  return $?
+  local exit_status=$?
+  return $exit_status
 }
 
-# <<< Modified run_game function >>>
 run_game() {
   echo "--- Running Game Mode ---"
   local prefix_resolved="$GAME_PREFIX"
   local launcher_exe_resolved="$JADEITE_LAUNCHER_EXE"
-  local game_exe_path_resolved="$GAME_EXE_PATH_VAR" # Use the dedicated variable name from config
+  local game_exe_path_resolved="$GAME_EXE_PATH_VAR"
   local dxvk_source_resolved="$DXVK_SOURCE_DIR"
   local vkd3d_source_resolved=$(eval echo "$HARDCODED_VKD3D_SOURCE_DIR")
 
@@ -248,11 +239,9 @@ run_game() {
   fi
   if [[ ! -f "$game_exe_path_resolved" ]]; then echo "Warning [Game Mode]: Game EXE path not found: '$game_exe_path_resolved'." >&2; fi
 
-  # Attempt Installations
   install_dxvk_if_needed "$prefix_resolved" "$dxvk_source_resolved"
   install_vkd3d_if_needed "$prefix_resolved" "$vkd3d_source_resolved"
 
-  # Validate optional tools
   local effective_gamemode=$USE_GAMEMODE
   local effective_mangohud=$USE_MANGO_HUD
   if [[ "$effective_gamemode" == "true" ]] && ! command -v gamemoderun &>/dev/null; then
@@ -264,33 +253,28 @@ run_game() {
     effective_mangohud=false
   fi
 
-  # <<< Determine DX mode suffix based on selection (using single dash) >>>
-  local dx_mode_suffix=""
+  local dx_mode_arg=""
   if [[ "$SELECTED_DX_MODE" == "dx11" ]]; then
-    dx_mode_suffix="-d3d11"
+    dx_mode_arg="-d3d11"
   elif [[ "$SELECTED_DX_MODE" == "dx12" ]]; then
-    dx_mode_suffix="-d3d12"
+    dx_mode_arg="-d3d12"
   else
     echo "Warning [Game Mode]: Invalid SELECTED_DX_MODE '$SELECTED_DX_MODE'. Using default '$DEFAULT_DX_MODE'." >&2
-    [[ "$DEFAULT_DX_MODE" == "dx12" ]] && dx_mode_suffix="-d3d12" || dx_mode_suffix="-d3d11"
+    [[ "$DEFAULT_DX_MODE" == "dx12" ]] && dx_mode_arg="-d3d12" || dx_mode_arg="-d3d11"
   fi
 
-  # <<< Construct the combined first argument string >>>
-  local combined_first_arg="${game_exe_path_resolved} -- ${dx_mode_suffix}"
+  local ALL_JADEITE_ARGS=("$game_exe_path_resolved" "--" "$dx_mode_arg" "${EXTRA_GAME_ARGS_ARRAY[@]}")
 
   echo "Prefix: $prefix_resolved"
   echo "Wine: $WINE_TO_USE"
   echo "Launcher: $launcher_exe_resolved"
-  echo "Selected DX Mode: $SELECTED_DX_MODE (Arg Suffix: $dx_mode_suffix)"
-  # Display the combined first argument and any extra args separately for clarity
-  echo "Launcher Arg 1: $combined_first_arg"
-  [[ ${#EXTRA_GAME_ARGS_ARRAY[@]} -gt 0 ]] && echo "Extra Launcher Args: ${EXTRA_GAME_ARGS_ARRAY[*]}"
+  echo "Selected DX Mode: $SELECTED_DX_MODE (Arg: $dx_mode_arg)"
+  echo "Args to Jadeite: ${ALL_JADEITE_ARGS[*]}"
   echo "MangoHud: $effective_mangohud"
   echo "GameMode: $effective_gamemode"
 
   export WINEPREFIX="$prefix_resolved"
 
-  # (DLL Override logic remains the same - correctly handles DXVK + conditional VKD3D)
   local current_overrides=""
   if [[ "$ENABLE_DXVK" == "true" ]]; then
     current_overrides+="d3d9,d3d10core,d3d11,dxgi=n"
@@ -323,10 +307,7 @@ run_game() {
   if [[ "$effective_mangohud" == "true" ]]; then final_command+=("mangohud"); fi
   final_command+=("$WINE_TO_USE")
   final_command+=("$launcher_exe_resolved")
-  # <<< Add the combined first argument as ONE element >>>
-  final_command+=("$combined_first_arg")
-  # <<< Add any extra arguments AFTER the first combined one >>>
-  final_command+=("${EXTRA_GAME_ARGS_ARRAY[@]}")
+  final_command+=("${ALL_JADEITE_ARGS[@]}")
 
   printf "Command: "
   printf "%q " "${final_command[@]}"
@@ -336,7 +317,6 @@ run_game() {
   return $?
 }
 
-# --- Argument Parsing ---
 if [[ "$1" == "patch" || "$1" == "launcher" || "$1" == "game" ]]; then
   SCRIPT_MODE="$1"
   shift
@@ -368,7 +348,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# --- Determine Wine Command (Common Step) ---
 if [[ -n "$WINE_CMD" ]]; then
   if [[ ! -f "$WINE_CMD" || ! -x "$WINE_CMD" ]]; then
     echo "Error: Configured Wine ('$WINE_CMD') not found/executable." >&2
